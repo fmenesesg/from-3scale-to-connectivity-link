@@ -1,0 +1,32 @@
+# Destination namespace is created by Argo CreateNamespace; resources use this or Release.Namespace.
+namespace: kuadrant-console
+
+image:
+  repository: quay.io/gateway-smashes/kuadrant-console
+  tag: "1.5.1"
+  pullPolicy: Always
+
+consolePlugin:
+  name: kuadrant-console
+  displayName: Connectivity Link
+
+# Optional runtime ConfigMap (grafana/tempo/portal keys). Omit empty optional keys.
+config:
+  create: true
+  name: kuadrant-console-config
+  # grafanaNamespace: ""
+  # grafanaRouteName: ""
+  # grafanaDashboardPrefix: ""
+  # tempoNamespace: ""
+  # tempoGatewayRouteName: ""
+  # tempoStackName: ""
+  # developerPortalUrl: ""   # omit for Phase A (no developer portal)
+  # internalDeveloperHubUrl: ""
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

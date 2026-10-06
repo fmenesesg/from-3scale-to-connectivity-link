@@ -1,0 +1,95 @@
+{{- $ns := .Values.namespace | default .Release.Namespace }}
+{{- $pluginName := .Values.consolePlugin.name | default "kuadrant-console" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuadrant-console
+  namespace: {{ $ns }}
+  labels:
+    app: kuadrant-console
+  annotations:
+    # OpenShift service-CA mints Secret kuadrant-console-tls for HTTPS :9001
+    service.beta.openshift.io/serving-cert-secret-name: kuadrant-console-tls
+spec:
+  selector:
+    app: kuadrant-console
+  ports:
+    - port: 9001
+      targetPort: 9001
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuadrant-console
+  namespace: {{ $ns }}
+  labels:
+    app: kuadrant-console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kuadrant-console
+  template:
+    metadata:
+      labels:
+        app: kuadrant-console
+    spec:
+      containers:
+        - name: kuadrant-console
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          ports:
+            - name: https
+              containerPort: 9001
+              protocol: TCP
+          volumeMounts:
+            - name: serving-cert
+              mountPath: /var/serving-cert
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: kuadrant-console-tls
+---
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: {{ $pluginName }}
+spec:
+  displayName: {{ .Values.consolePlugin.displayName | quote }}
+  backend:
+    type: Service
+    service:
+      name: kuadrant-console
+      namespace: {{ $ns }}
+      port: 9001
+      basePath: /
+{{- if .Values.config.create }}
+{{- $cfgKeys := list "grafanaNamespace" "grafanaRouteName" "grafanaDashboardPrefix" "tempoNamespace" "tempoGatewayRouteName" "tempoStackName" "developerPortalUrl" "internalDeveloperHubUrl" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.config.name | default "kuadrant-console-config" }}
+  namespace: {{ $ns }}
+  labels:
+    app: kuadrant-console
+{{- /* Only emit optional runtime keys when set; omit developerPortalUrl for Phase A */}}
+{{- $hasData := false }}
+{{- range $key := $cfgKeys }}
+{{- if index $.Values.config $key }}{{- $hasData = true }}{{- end }}
+{{- end }}
+{{- if $hasData }}
+data:
+  {{- range $key := $cfgKeys }}
+  {{- $val := index $.Values.config $key }}
+  {{- if $val }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

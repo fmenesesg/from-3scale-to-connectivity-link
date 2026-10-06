@@ -59,7 +59,7 @@ spec:
         - -c
         - |
           set -e
-          DESIRED="pipelines-console-plugin kuadrant-console-plugin"
+          DESIRED="pipelines-console-plugin kuadrant-console"
 
           for PLUGIN in $DESIRED; do
             echo "Waiting for ConsolePlugin $PLUGIN..."

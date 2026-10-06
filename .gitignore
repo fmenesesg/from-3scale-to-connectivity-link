@@ -24,3 +24,4 @@ __pycache__/
 # Antora local output (showroom/site.yml writes here when built locally)
 showroom/www/
 .quay-auth.json
+.codegraph/

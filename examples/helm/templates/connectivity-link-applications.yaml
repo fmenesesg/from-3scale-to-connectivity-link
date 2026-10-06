@@ -269,6 +269,13 @@ spec:
           adminPassword: {{ $.Values.workshopRegistration.keycloakAdminPassword | default "" | quote }}
         showroom:
           url: {{ printf "https://showroom-showroom.%s" $domain | quote }}
+    {{- else if eq .path "kuadrant-console" }}
+    helm:
+      valuesObject:
+        namespace: kuadrant-console
+        image:
+          repository: quay.io/gateway-smashes/kuadrant-console
+          tag: "1.5.1"
     {{- else if eq .path "nfl-wallet" }}
     helm:
       valuesObject:

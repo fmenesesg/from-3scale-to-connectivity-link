@@ -66,7 +66,7 @@ This repository provisions a complete migration workshop environment on OpenShif
 | **LiteMaaS** | LLM proxy for model access |
 | **APIShift** | Migration GUI with the same core path as Migration Toolkit, plus **AI model assist** and Developer Hub registration (`helmApps.apishift`). Chart: [Everything-is-Code/apishift](https://github.com/Everything-is-Code/apishift) |
 | **Migration Toolkit RHCL** | Guided Mushino GUI for 3scale → Connectivity Link (`helmApps.migration-toolkit-rhcl`). Docs: [Everything-is-Code/migration-toolkit-rhcl](https://github.com/Everything-is-Code/migration-toolkit-rhcl) |
-| **Kuadrant Console** | OpenShift Console plugin for Connectivity Link (`helmApps.custom-rhcl-console`). Docs: [custom-rhcl-console](https://everything-is-code.github.io/custom-rhcl-console/) |
+| **Kuadrant Console** | OpenShift Console plugin for Connectivity Link (`connectivityLink.apps` → `kuadrant-console`). Source: [gateway-smashes/kuadrant-console](https://github.com/gateway-smashes/kuadrant-console) |
 
 ### Migration strategies deep dive
 
@@ -74,7 +74,7 @@ This quickstart ships **four strategies**. The **Developer Hub Golden Path** is 
 
 ![Kuadrant Console Architecture](docs/images/kuadrant-console-arch.png)
 
-#### Kuadrant Console (`custom-rhcl-console`)
+#### Kuadrant Console (`kuadrant-console`)
 
 OpenShift Console **dynamic plugin** (display name: *Connectivity Link*) that operates on Kuadrant CRDs through the Console API proxy.
 
@@ -84,10 +84,11 @@ OpenShift Console **dynamic plugin** (display name: *Connectivity Link*) that op
 | **API Keys** | Create Secret + `APIKey` CR, approve/reject via label workflow, Reveal Key from referenced Secret |
 | **Traffic & cost** | Overview metrics via Thanos/Prometheus; deep links into Grafana RHCL dashboards |
 | **Traces** | Tempo deep links when a `TempoStack` / Tempo monolith is present |
-| **Namespace** | Must be `custom-rhcl-console` (plugin ConfigMap lookups are hardcoded) |
-| **Image** | `quay.io/everythingascode/custom-rhcl-console:v0.1.2` |
+| **Namespace** | `kuadrant-console` |
+| **Plugin name** | `kuadrant-console` |
+| **Image** | `quay.io/gateway-smashes/kuadrant-console:1.5.1` |
 
-Helm entry: `connectivityLink.helmApps` → `id: custom-rhcl-console` in [`examples/helm/values.yaml`](examples/helm/values.yaml). Demo APIs + gateway live in `kuadrant-console-demo`.
+Helm entry: `connectivityLink.apps` → `id: kuadrant-console` (local chart [`examples/helm/components/kuadrant-console`](examples/helm/components/kuadrant-console)). Upstream: [gateway-smashes/kuadrant-console](https://github.com/gateway-smashes/kuadrant-console). Demo APIs + gateway live in `kuadrant-console-demo`.
 
 #### Migration Toolkit RHCL (`migration-toolkit-rhcl`)
 
@@ -297,7 +298,7 @@ Use this table when sizing a **quickstart / demo** cluster before applying `user
 | **Observability** | `openshift-cluster-observability-operator`, `openshift-tempo`, OTel | ~3 Gi | Grafana, Thanos querier, Tempo, collectors |
 | **Developer Hub** | `developer-hub`, `rhdh-operator` | ~2 Gi | Backstage + dynamic plugins |
 | **3scale** | `3scale-system` | ~4 Gi | APIcast + system + zync |
-| **Migration UIs** | `gateforge`, `migration-toolkit`, `custom-rhcl-console` | ~1.5 Gi | APIShift + Migration Toolkit + console plugin |
+| **Migration UIs** | `gateforge`, `migration-toolkit`, `kuadrant-console` | ~1.5 Gi | APIShift + Migration Toolkit + console plugin |
 | **Identity / SCM** | `rhbk-operator`, `gitea` | ~3 Gi | Keycloak + Gitea + DB |
 
 #### Quickstart Cluster Profiles (control plane + workers)
@@ -768,7 +769,7 @@ For a fresh installation, run these prompts in sequence to validate the full sta
 - [examples/helm/README.md](examples/helm/README.md) - Helm deployment guide
 - [examples/ansible/README.md](examples/ansible/README.md) - Ansible deployment guide
 - [docs/ansible-developer-guide.md](docs/ansible-developer-guide.md) - In-depth Ansible patterns
-- [Kuadrant Console plugin docs](https://everything-is-code.github.io/custom-rhcl-console/)
+- [Kuadrant Console plugin](https://github.com/gateway-smashes/kuadrant-console)
 - [Red Hat 3scale Documentation](https://docs.redhat.com/en/documentation/red_hat_3scale_api_management/) - Official 3scale docs
 - [Red Hat Connectivity Link Documentation](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/) - Official Connectivity Link docs
 
@@ -791,6 +792,7 @@ from-3scale-to-connectivity-link/
 │   │   │   ├── developer-hub/            # Backstage instance
 │   │   │   ├── workshop-registration/    # Self-service registration portal
 │   │   │   ├── showroom/                 # Workshop lab guide
+│   │   │   ├── kuadrant-console/         # OpenShift Console plugin (Connectivity Link)
 │   │   │   ├── kuadrant-console-demo/    # Demo APIs + EnvoyFilter CORS/Bearer
 │   │   │   └── ...                       # Other infrastructure components
 │   │   └── software-templates/            # Backstage scaffolder templates
