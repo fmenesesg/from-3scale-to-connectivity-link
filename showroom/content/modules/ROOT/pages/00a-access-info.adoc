@@ -111,7 +111,7 @@ For a complete dump of all URLs and passwords, run from the Showroom terminal:
 [source,bash]
 ----
 cd /tmp
-git clone https://github.com/Everything-is-Code/from-3scale-to-connectivity-link.git repo 2>/dev/null || true
+git clone https://github.com/fmenesesg/from-3scale-to-connectivity-link.git repo 2>/dev/null || true
 bash repo/scripts/get-credentials.sh
 ----
 
