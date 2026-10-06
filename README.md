@@ -479,7 +479,7 @@ Connectivity Link runs on **Istio Gateway API**. When browser clients (Swagger U
 
 ```bash
 # Clone this template
-git clone https://github.com/Everything-is-Code/from-3scale-to-connectivity-link.git my-content
+git clone https://github.com/fmenesesg/from-3scale-to-connectivity-link.git my-content
 cd my-content
 
 # Choose an example and start customizing
@@ -761,7 +761,7 @@ For a fresh installation, run these prompts in sequence to validate the full sta
 
 ## Documentation
 
-- [Workshop (GitHub Pages)](https://everything-is-code.github.io/from-3scale-to-connectivity-link/) - Full workshop guide (Antora showroom)
+- [Workshop (GitHub Pages)](https://fmenesesg.github.io/from-3scale-to-connectivity-link/) - Full workshop guide (Antora showroom)
 - Showroom modules: [11 Kuadrant Console](showroom/content/modules/ROOT/pages/11-kuadrant-console.adoc) · [12 Migration Toolkit](showroom/content/modules/ROOT/pages/12-migration-toolkit.adoc) · [13 APIShift](showroom/content/modules/ROOT/pages/13-apishift-gateforge.adoc)
 - [Architecture diagrams](docs/images/) - Cluster topology, migration flow, console architecture, Service Mesh EnvoyFilter
 - [`scripts/get-credentials.sh`](scripts/get-credentials.sh) - Print URLs and admin credentials for non-OAuth consoles
