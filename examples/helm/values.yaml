@@ -110,6 +110,14 @@ connectivityLink:
       prune: true
       selfHeal: true
       skipDryRunOnMissingResource: false
+    - id: kuadrant-console
+      enabled: true
+      path: kuadrant-console
+      destinationNamespace: kuadrant-console
+      syncWave: "10"
+      prune: true
+      selfHeal: true
+      skipDryRunOnMissingResource: true
 
 # ============================================================
 # Helm Chart Applications (deployed via ArgoCD Helm source)
@@ -144,39 +152,8 @@ connectivityLink:
       targetRevision: "main"
       destinationNamespace: migration-toolkit
       syncWave: "9"
-    # Kuadrant / Connectivity Link OpenShift Console plugin
-    - id: custom-rhcl-console
-      enabled: true
-      repoURL: "https://github.com/Everything-is-Code/custom-rhcl-console"
-      path: helm/custom-rhcl-console
-      targetRevision: "main"
-      destinationNamespace: custom-rhcl-console
-      syncWave: "10"
-      values:
-        createNamespace: true
-        image:
-          repository: quay.io/everythingascode/custom-rhcl-console
-          tag: v0.1.2
-          pullPolicy: Always
-        consolePlugin:
-          name: custom-rhcl-console
-          displayName: "Connectivity Link"
-          patchConsole: true
-        config:
-          create: true
-          name: custom-rhcl-console-config
-          costCurrency: USD
-          costBudget: "500"
-          costPricing: '{"free":{"tokens_per_1k":0,"calls_per_1k":0},"basic":{"tokens_per_1k":0.05,"calls_per_1k":0.02},"pro":{"tokens_per_1k":0.10,"calls_per_1k":0.05},"anonymous":{"tokens_per_1k":0,"calls_per_1k":0.01}}'
-        dnsProber:
-          enabled: true
-          image:
-            repository: quay.io/everythingascode/custom-rhcl-console
-            tag: dns-prober-v0.1.2
-            pullPolicy: Always
-          route:
-            enabled: true
-            host: "dns-prober-custom-rhcl-console.{{ .Values.deployer.domain }}"
+    # custom-rhcl-console removed: replaced by connectivityLink.apps kuadrant-console
+    # (local chart examples/helm/components/kuadrant-console)
 
 # ============================================================
 # User Scaling

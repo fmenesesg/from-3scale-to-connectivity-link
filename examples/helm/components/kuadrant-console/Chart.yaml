@@ -1,0 +1,5 @@
+apiVersion: v2
+name: kuadrant-console
+description: OpenShift Console plugin for Connectivity Link (gateway-smashes/kuadrant-console)
+version: 0.1.0
+type: application

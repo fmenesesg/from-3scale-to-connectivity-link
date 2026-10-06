@@ -1,0 +1,184 @@
+{{- $ns := .Values.namespace | default .Release.Namespace }}
+{{- $pluginName := .Values.consolePlugin.name | default "kuadrant-console" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuadrant-console
+  namespace: {{ $ns }}
+  labels:
+    app: kuadrant-console
+  annotations:
+    # OpenShift service-CA mints Secret kuadrant-console-tls for HTTPS :9001
+    service.beta.openshift.io/serving-cert-secret-name: kuadrant-console-tls
+spec:
+  selector:
+    app: kuadrant-console
+  ports:
+    - port: 9001
+      targetPort: 9001
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuadrant-console
+  namespace: {{ $ns }}
+  labels:
+    app: kuadrant-console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kuadrant-console
+  template:
+    metadata:
+      labels:
+        app: kuadrant-console
+    spec:
+      containers:
+        - name: kuadrant-console
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          ports:
+            - name: https
+              containerPort: 9001
+              protocol: TCP
+          volumeMounts:
+            - name: serving-cert
+              mountPath: /var/serving-cert
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: kuadrant-console-tls
+---
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: {{ $pluginName }}
+spec:
+  displayName: {{ .Values.consolePlugin.displayName | quote }}
+  backend:
+    type: Service
+    service:
+      name: kuadrant-console
+      namespace: {{ $ns }}
+      port: 9001
+      basePath: /
+{{- if .Values.patchConsole }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kuadrant-console-enabler
+  namespace: {{ $ns }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kuadrant-console-enabler
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+rules:
+  - apiGroups: ["operator.openshift.io"]
+    resources: ["consoles"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["console.openshift.io"]
+    resources: ["consoleplugins"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kuadrant-console-enabler
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kuadrant-console-enabler
+subjects:
+  - kind: ServiceAccount
+    name: kuadrant-console-enabler
+    namespace: {{ $ns }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enable-kuadrant-console-plugin
+  namespace: {{ $ns }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: kuadrant-console-enabler
+      containers:
+        - name: enable-plugin
+          image: registry.redhat.io/openshift4/ose-cli:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              PLUGIN="{{ $pluginName }}"
+              echo "Waiting for ConsolePlugin $PLUGIN..."
+              for i in $(seq 1 24); do
+                if oc get consoleplugin "$PLUGIN" >/dev/null 2>&1; then
+                  echo "  $PLUGIN exists."
+                  break
+                fi
+                echo "  attempt $i/24..."
+                sleep 5
+              done
+              if ! oc get consoleplugin "$PLUGIN" >/dev/null 2>&1; then
+                echo "ERROR: ConsolePlugin $PLUGIN not found after 120s"
+                exit 1
+              fi
+              CURRENT=$(oc get console.operator.openshift.io cluster \
+                -o jsonpath='{.spec.plugins[*]}' 2>/dev/null || echo "")
+              if echo "$CURRENT" | tr ' ' '\n' | grep -qx "$PLUGIN"; then
+                echo "Plugin already enabled: $CURRENT"
+                exit 0
+              fi
+              MERGED=$(echo "$CURRENT $PLUGIN" | xargs)
+              JSON_ARRAY=$(echo "$MERGED" | tr ' ' '\n' | \
+                awk 'BEGIN{printf "["} NR>1{printf ","} {printf "\"%s\"",$0} END{printf "]"}')
+              oc patch console.operator.openshift.io cluster --type=merge \
+                -p "{\"spec\":{\"plugins\":$JSON_ARRAY}}"
+              echo "Console plugins enabled: $MERGED"
+{{- end }}
+{{- if .Values.config.create }}
+{{- $cfgKeys := list "grafanaNamespace" "grafanaRouteName" "grafanaDashboardPrefix" "tempoNamespace" "tempoGatewayRouteName" "tempoStackName" "developerPortalUrl" "internalDeveloperHubUrl" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.config.name | default "kuadrant-console-config" }}
+  namespace: {{ $ns }}
+  labels:
+    app: kuadrant-console
+{{- /* Only emit optional runtime keys when set; omit developerPortalUrl for Phase A */}}
+{{- $hasData := false }}
+{{- range $key := $cfgKeys }}
+{{- if index $.Values.config $key }}{{- $hasData = true }}{{- end }}
+{{- end }}
+{{- if $hasData }}
+data:
+  {{- range $key := $cfgKeys }}
+  {{- $val := index $.Values.config $key }}
+  {{- if $val }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
