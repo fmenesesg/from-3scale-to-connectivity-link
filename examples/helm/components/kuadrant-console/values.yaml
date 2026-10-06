@@ -10,6 +10,10 @@ consolePlugin:
   name: kuadrant-console
   displayName: Connectivity Link
 
+# PostSync Job patches console.operator to enable this plugin (avoids race with
+# operators/enable-console-plugins at sync-wave 5 before this app at wave 10).
+patchConsole: true
+
 # Optional runtime ConfigMap (grafana/tempo/portal keys). Omit empty optional keys.
 config:
   create: true

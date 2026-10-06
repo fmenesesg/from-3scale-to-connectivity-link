@@ -54,7 +54,8 @@ Phase A of the gateway-smashes adoption: console plugin only (no developer porta
 ## Progress
 - Created: 2026-10-06
 - Branch: `feat/kuadrant-console-phase-a`
-- Completed: 2026-10-06 — T1–T5 via delegated writer
+- Completed: 2026-10-06 — T1–T5 via delegated writer (`f60fe0c`)
+- Follow-up: PostSync enable Job in chart to avoid wave-5 vs wave-10 race
 - Verification:
   - `helm template test examples/helm/components/kuadrant-console`: OK (ConsolePlugin/kuadrant-console, serving-cert annotation, `/var/serving-cert` mount)
   - `rg custom-rhcl-console` in README/helm/showroom install surfaces: only removal comment in `examples/helm/values.yaml`
